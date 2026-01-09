@@ -19,13 +19,27 @@ const pool = new Pool({
     // サーバーレス環境での接続設定
     max: 1, // サーバーレス環境では接続数を最小限に
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 10000, // 接続タイムアウトを延長
 });
 
 // 接続エラーハンドリング
 pool.on('error', (err) => {
-    console.error('予期しないデータベース接続エラー:', err);
+    console.error('❌ 予期しないデータベース接続エラー:', err);
+    console.error('エラー詳細:', err.stack);
 });
+
+// 接続テスト
+if (databaseUrl) {
+    pool.connect()
+        .then(client => {
+            console.log('✅ データベース接続成功');
+            client.release();
+        })
+        .catch(err => {
+            console.error('❌ データベース接続失敗:', err.message);
+            console.error('接続文字列:', databaseUrl.replace(/:[^:@]+@/, ':****@')); // パスワードをマスク
+        });
+}
 
 // スキーマファイルのパス
 const schemaPath = path.join(__dirname, 'schema.sql');
@@ -33,6 +47,10 @@ const schemaPath = path.join(__dirname, 'schema.sql');
 // データベースの初期化（テーブルが存在しない場合に作成）
 async function initializeDatabase() {
     try {
+        if (!databaseUrl) {
+            throw new Error('DATABASE_URL環境変数が設定されていません');
+        }
+        
         // スキーマファイルを読み込む
         const schema = fs.readFileSync(schemaPath, 'utf8');
         
@@ -40,13 +58,22 @@ async function initializeDatabase() {
         const client = await pool.connect();
         try {
             await client.query(schema);
-            console.log('データベーススキーマを確認/初期化しました');
+            console.log('✅ データベーススキーマを確認/初期化しました');
+        } catch (error) {
+            console.error('❌ データベース初期化エラー:', error.message);
+            console.error('エラー詳細:', error);
+            throw error;
         } finally {
             client.release();
         }
     } catch (error) {
-        console.error('データベース初期化エラー:', error.message);
+        console.error('❌ データベース初期化エラー:', error.message);
+        console.error('エラー詳細:', error);
         // エラーが発生してもアプリは続行可能（テーブルが既に存在する可能性があるため）
+        // ただし、接続エラーの場合は致命的
+        if (error.message.includes('DATABASE_URL') || error.message.includes('connection')) {
+            throw error;
+        }
     }
 }
 
@@ -68,6 +95,11 @@ const db = {
         try {
             const result = await client.query(text, params);
             return result.rows;
+        } catch (error) {
+            console.error('データベースクエリエラー:', error.message);
+            console.error('SQL:', text);
+            console.error('パラメータ:', params);
+            throw error;
         } finally {
             client.release();
         }
@@ -85,6 +117,11 @@ const db = {
                 id: result.rows[0]?.id || null,
                 changes: result.rowCount || 0
             };
+        } catch (error) {
+            console.error('データベースクエリエラー:', error.message);
+            console.error('SQL:', text);
+            console.error('パラメータ:', params);
+            throw error;
         } finally {
             client.release();
         }
@@ -97,6 +134,11 @@ const db = {
         try {
             const result = await client.query(text, params);
             return result.rows[0] || null;
+        } catch (error) {
+            console.error('データベースクエリエラー:', error.message);
+            console.error('SQL:', text);
+            console.error('パラメータ:', params);
+            throw error;
         } finally {
             client.release();
         }
@@ -109,6 +151,11 @@ const db = {
         try {
             const result = await client.query(text, params);
             return result.rows;
+        } catch (error) {
+            console.error('データベースクエリエラー:', error.message);
+            console.error('SQL:', text);
+            console.error('パラメータ:', params);
+            throw error;
         } finally {
             client.release();
         }

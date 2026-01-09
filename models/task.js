@@ -1,26 +1,48 @@
-const db = require('../database/db');
+const supabase = require('../database/supabase-client');
 
 class Task {
     // 全タスクを取得（分類情報も含む）
     static async getAll() {
         try {
-            const tasks = await db.allAsync(`
-                SELECT 
-                    t.id,
-                    t.text,
-                    t.completed,
-                    t.category_id,
-                    t.due_date,
-                    t.priority,
-                    t.created_at,
-                    t.updated_at,
-                    c.name as category_name,
-                    c.color as category_color
-                FROM tasks t
-                LEFT JOIN categories c ON t.category_id = c.id
-                ORDER BY t.priority ASC, t.created_at DESC
-            `);
-            return tasks;
+            const { data: tasks, error: tasksError } = await supabase
+                .from('tasks')
+                .select('*')
+                .order('priority', { ascending: true })
+                .order('created_at', { ascending: false });
+            
+            if (tasksError) throw tasksError;
+            if (!tasks || tasks.length === 0) return [];
+            
+            // 分類情報を取得
+            const categoryIds = [...new Set(tasks.map(t => t.category_id).filter(Boolean))];
+            let categoriesMap = {};
+            
+            if (categoryIds.length > 0) {
+                const { data: categories, error: categoriesError } = await supabase
+                    .from('categories')
+                    .select('id, name, color')
+                    .in('id', categoryIds);
+                
+                if (categoriesError) throw categoriesError;
+                categoriesMap = categories.reduce((acc, cat) => {
+                    acc[cat.id] = cat;
+                    return acc;
+                }, {});
+            }
+            
+            // タスクと分類情報を結合
+            return tasks.map(task => ({
+                id: task.id,
+                text: task.text,
+                completed: task.completed,
+                category_id: task.category_id,
+                due_date: task.due_date,
+                priority: task.priority,
+                created_at: task.created_at,
+                updated_at: task.updated_at,
+                category_name: task.category_id ? categoriesMap[task.category_id]?.name || null : null,
+                category_color: task.category_id ? categoriesMap[task.category_id]?.color || null : null
+            }));
         } catch (error) {
             throw error;
         }
@@ -29,23 +51,41 @@ class Task {
     // IDでタスクを取得
     static async getById(id) {
         try {
-            const task = await db.getAsync(`
-                SELECT 
-                    t.id,
-                    t.text,
-                    t.completed,
-                    t.category_id,
-                    t.due_date,
-                    t.priority,
-                    t.created_at,
-                    t.updated_at,
-                    c.name as category_name,
-                    c.color as category_color
-                FROM tasks t
-                LEFT JOIN categories c ON t.category_id = c.id
-                WHERE t.id = $1
-            `, [id]);
-            return task;
+            const { data: task, error } = await supabase
+                .from('tasks')
+                .select('*')
+                .eq('id', id)
+                .single();
+            
+            if (error) throw error;
+            if (!task) return null;
+            
+            // 分類情報を取得
+            let category = null;
+            if (task.category_id) {
+                const { data: cat, error: catError } = await supabase
+                    .from('categories')
+                    .select('name, color')
+                    .eq('id', task.category_id)
+                    .single();
+                
+                if (!catError && cat) {
+                    category = cat;
+                }
+            }
+            
+            return {
+                id: task.id,
+                text: task.text,
+                completed: task.completed,
+                category_id: task.category_id,
+                due_date: task.due_date,
+                priority: task.priority,
+                created_at: task.created_at,
+                updated_at: task.updated_at,
+                category_name: category?.name || null,
+                category_color: category?.color || null
+            };
         } catch (error) {
             throw error;
         }
@@ -54,11 +94,19 @@ class Task {
     // タスクを作成
     static async create(text, categoryId = null, dueDate = null, priority = 2) {
         try {
-            const result = await db.runAsync(
-                'INSERT INTO tasks (text, category_id, due_date, priority) VALUES ($1, $2, $3, $4) RETURNING id',
-                [text, categoryId, dueDate, priority]
-            );
-            return await this.getById(result.id);
+            const { data, error } = await supabase
+                .from('tasks')
+                .insert({
+                    text,
+                    category_id: categoryId,
+                    due_date: dueDate,
+                    priority
+                })
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return await this.getById(data.id);
         } catch (error) {
             throw error;
         }
@@ -67,11 +115,22 @@ class Task {
     // タスクを更新
     static async update(id, text, completed, categoryId, dueDate = null, priority = 2) {
         try {
-            await db.runAsync(
-                'UPDATE tasks SET text = $1, completed = $2, category_id = $3, due_date = $4, priority = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6',
-                [text, completed, categoryId, dueDate, priority, id]
-            );
-            return await this.getById(id);
+            const { data, error } = await supabase
+                .from('tasks')
+                .update({
+                    text,
+                    completed,
+                    category_id: categoryId,
+                    due_date: dueDate,
+                    priority,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', id)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return await this.getById(data.id);
         } catch (error) {
             throw error;
         }
@@ -85,11 +144,19 @@ class Task {
                 throw new Error('タスクが見つかりません');
             }
             const newCompleted = !task.completed;
-            await db.runAsync(
-                'UPDATE tasks SET completed = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-                [newCompleted, id]
-            );
-            return await this.getById(id);
+            
+            const { data, error } = await supabase
+                .from('tasks')
+                .update({
+                    completed: newCompleted,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', id)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return await this.getById(data.id);
         } catch (error) {
             throw error;
         }
@@ -98,11 +165,13 @@ class Task {
     // タスクを削除
     static async delete(id) {
         try {
-            const result = await db.runAsync(
-                'DELETE FROM tasks WHERE id = $1',
-                [id]
-            );
-            return result.changes > 0;
+            const { error } = await supabase
+                .from('tasks')
+                .delete()
+                .eq('id', id);
+            
+            if (error) throw error;
+            return true;
         } catch (error) {
             throw error;
         }

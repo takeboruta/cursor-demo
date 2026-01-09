@@ -7,6 +7,7 @@ const categoryController = {
             const categories = await Category.getAll();
             res.json(categories);
         } catch (error) {
+            console.error('分類取得エラー:', error);
             res.status(500).json({ error: error.message });
         }
     },
