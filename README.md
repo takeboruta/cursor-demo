@@ -52,6 +52,41 @@ SELECT * FROM tasks;       # タスクデータ
 
 データベースファイルの場所: `database/todo.db`
 
+## 開発フロー
+
+### ブランチ戦略
+
+1. **機能開発ブランチを作成**
+   ```bash
+   git checkout -b feature/機能名
+   # 例: git checkout -b feature/add-search
+   ```
+
+2. **変更をコミット**
+   ```bash
+   git add .
+   git commit -m "feat: 機能の説明"
+   ```
+
+3. **ブランチをプッシュ**
+   ```bash
+   git push origin feature/機能名
+   ```
+
+4. **GitHubでPull Requestを作成**
+   - GitHubのリポジトリページで「Compare & pull request」をクリック
+   - タイトルと説明を記入
+   - レビュアーを指定（必要に応じて）
+   - 「Create pull request」をクリック
+
+5. **レビュー後、マージ**
+   - レビューが承認されたら、mainブランチにマージ
+   - マージ後、ローカルのmainブランチを更新
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+
 ## API エンドポイント
 
 ### タスク
