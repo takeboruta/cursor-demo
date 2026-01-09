@@ -132,8 +132,15 @@ function renderTasks() {
         // アニメーション用のクラスを追加
         taskItem.classList.add('task-item-enter');
         
+        const taskHeader = document.createElement('div');
+        taskHeader.className = 'task-item-header';
+        
         const taskContent = document.createElement('div');
         taskContent.className = 'task-content';
+        
+        // タスクテキスト部分
+        const taskTextContainer = document.createElement('div');
+        taskTextContainer.className = 'task-text-container';
         
         // 分類バッジ
         if (task.category_name) {
@@ -141,7 +148,7 @@ function renderTasks() {
             categoryBadge.className = 'category-badge';
             categoryBadge.textContent = task.category_name;
             categoryBadge.style.backgroundColor = task.category_color || '#007AFF';
-            taskContent.appendChild(categoryBadge);
+            taskTextContainer.appendChild(categoryBadge);
         }
         
         const taskTextSpan = document.createElement('span');
@@ -154,13 +161,18 @@ function renderTasks() {
             taskItem.classList.add('task-completed');
         }
         
-        taskContent.appendChild(taskTextSpan);
+        taskTextContainer.appendChild(taskTextSpan);
+        taskContent.appendChild(taskTextContainer);
+        
+        // バッジ部分（優先度・期限日）
+        const badgeContainer = document.createElement('div');
+        badgeContainer.className = 'badge-container';
         
         // 優先度の表示
         const prioritySpan = document.createElement('span');
         prioritySpan.className = `priority-badge ${getPriorityClass(task.priority || 2)}`;
         prioritySpan.textContent = getPriorityLabel(task.priority || 2);
-        taskContent.appendChild(prioritySpan);
+        badgeContainer.appendChild(prioritySpan);
         
         // 期限日の表示
         if (task.due_date) {
@@ -188,8 +200,10 @@ function renderTasks() {
                 dueDateSpan.classList.add('due-date-today');
             }
             
-            taskContent.appendChild(dueDateSpan);
+            badgeContainer.appendChild(dueDateSpan);
         }
+        
+        taskContent.appendChild(badgeContainer);
         
         // 完了ボタン
         const completeBtn = document.createElement('button');
@@ -216,9 +230,55 @@ function renderTasks() {
         buttonContainer.appendChild(completeBtn);
         buttonContainer.appendChild(deleteBtn);
         
-        taskItem.appendChild(taskContent);
-        taskItem.appendChild(buttonContainer);
+        taskHeader.appendChild(taskContent);
+        taskHeader.appendChild(buttonContainer);
+        taskItem.appendChild(taskHeader);
+        
+        // サブタスクセクション
+        const subtaskSection = document.createElement('div');
+        subtaskSection.className = 'subtask-section';
+        subtaskSection.dataset.taskId = task.id;
+        
+        // サブタスク一覧
+        const subtaskList = document.createElement('ul');
+        subtaskList.className = 'subtask-list';
+        subtaskList.id = `subtask-list-${task.id}`;
+        
+        // サブタスク追加フォーム
+        const subtaskForm = document.createElement('div');
+        subtaskForm.className = 'subtask-form';
+        const subtaskInput = document.createElement('input');
+        subtaskInput.type = 'text';
+        subtaskInput.className = 'subtask-input';
+        subtaskInput.placeholder = 'サブタスクを追加...';
+        subtaskInput.dataset.taskId = task.id;
+        
+        const subtaskAddBtn = document.createElement('button');
+        subtaskAddBtn.className = 'subtask-add-btn';
+        subtaskAddBtn.textContent = '追加';
+        subtaskAddBtn.dataset.taskId = task.id;
+        
+        subtaskAddBtn.addEventListener('click', async () => {
+            await addSubtask(task.id);
+        });
+        
+        subtaskInput.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                await addSubtask(task.id);
+            }
+        });
+        
+        subtaskForm.appendChild(subtaskInput);
+        subtaskForm.appendChild(subtaskAddBtn);
+        
+        subtaskSection.appendChild(subtaskList);
+        subtaskSection.appendChild(subtaskForm);
+        
+        taskItem.appendChild(subtaskSection);
         taskList.appendChild(taskItem);
+        
+        // サブタスクを読み込む
+        loadSubtasks(task.id);
     });
 }
 
@@ -356,6 +416,101 @@ async function deleteCategory(id) {
     } catch (error) {
         console.error('分類削除エラー:', error);
         alert('分類の削除に失敗しました');
+    }
+}
+
+// サブタスクを読み込む
+async function loadSubtasks(taskId) {
+    try {
+        const subtasks = await apiCall(`/subtasks/task/${taskId}`);
+        renderSubtasks(taskId, subtasks);
+    } catch (error) {
+        console.error('サブタスクの読み込みエラー:', error);
+    }
+}
+
+// サブタスクを表示する関数
+function renderSubtasks(taskId, subtasks) {
+    const subtaskList = document.getElementById(`subtask-list-${taskId}`);
+    if (!subtaskList) return;
+    
+    subtaskList.innerHTML = '';
+    
+    subtasks.forEach((subtask) => {
+        const subtaskItem = document.createElement('li');
+        subtaskItem.className = 'subtask-item';
+        subtaskItem.dataset.id = subtask.id;
+        
+        const subtaskCheckbox = document.createElement('input');
+        subtaskCheckbox.type = 'checkbox';
+        subtaskCheckbox.className = 'subtask-checkbox';
+        subtaskCheckbox.checked = subtask.completed;
+        subtaskCheckbox.addEventListener('change', async () => {
+            await toggleSubtaskComplete(subtask.id, taskId);
+        });
+        
+        const subtaskText = document.createElement('span');
+        subtaskText.className = 'subtask-text';
+        subtaskText.textContent = subtask.text;
+        if (subtask.completed) {
+            subtaskText.classList.add('completed');
+        }
+        
+        const subtaskDeleteBtn = document.createElement('button');
+        subtaskDeleteBtn.className = 'subtask-delete-btn';
+        subtaskDeleteBtn.textContent = '削除';
+        subtaskDeleteBtn.addEventListener('click', async () => {
+            await deleteSubtask(subtask.id, taskId);
+        });
+        
+        subtaskItem.appendChild(subtaskCheckbox);
+        subtaskItem.appendChild(subtaskText);
+        subtaskItem.appendChild(subtaskDeleteBtn);
+        subtaskList.appendChild(subtaskItem);
+    });
+}
+
+// サブタスクを追加する関数
+async function addSubtask(taskId) {
+    const subtaskInput = document.querySelector(`.subtask-input[data-task-id="${taskId}"]`);
+    const text = subtaskInput.value.trim();
+    
+    if (text === '') {
+        return;
+    }
+    
+    try {
+        await apiCall('/subtasks', 'POST', {
+            task_id: taskId,
+            text: text
+        });
+        subtaskInput.value = '';
+        await loadSubtasks(taskId);
+    } catch (error) {
+        console.error('サブタスク追加エラー:', error);
+        alert('サブタスクの追加に失敗しました');
+    }
+}
+
+// サブタスクの完了状態を切り替える関数
+async function toggleSubtaskComplete(subtaskId, taskId) {
+    try {
+        await apiCall(`/subtasks/${subtaskId}/toggle`, 'PATCH');
+        await loadSubtasks(taskId);
+    } catch (error) {
+        console.error('サブタスク更新エラー:', error);
+        alert('サブタスクの更新に失敗しました');
+    }
+}
+
+// サブタスクを削除する関数
+async function deleteSubtask(subtaskId, taskId) {
+    try {
+        await apiCall(`/subtasks/${subtaskId}`, 'DELETE');
+        await loadSubtasks(taskId);
+    } catch (error) {
+        console.error('サブタスク削除エラー:', error);
+        alert('サブタスクの削除に失敗しました');
     }
 }
 

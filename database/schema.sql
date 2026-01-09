@@ -20,6 +20,16 @@ CREATE TABLE IF NOT EXISTS tasks (
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 
+-- サブタスクテーブル
+CREATE TABLE IF NOT EXISTS subtasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id INTEGER NOT NULL,
+    text TEXT NOT NULL,
+    completed INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+);
+
 -- 初期データ（分類マスタ）
 INSERT OR IGNORE INTO categories (name, color) VALUES 
     ('仕事', '#007AFF'),
