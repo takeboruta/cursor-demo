@@ -1,4 +1,4 @@
-const taskController = require('../../controllers/taskController');
+const taskController = require('../../../controllers/taskController');
 
 module.exports = async function handler(req, res) {
     // CORS設定

@@ -1,14 +1,17 @@
-const db = require('../database/db');
+const supabase = require('../database/supabase-client');
 
 class Subtask {
     // タスクIDでサブタスクを全取得
     static async getByTaskId(taskId) {
         try {
-            const subtasks = await db.allAsync(
-                'SELECT * FROM subtasks WHERE task_id = $1 ORDER BY created_at ASC',
-                [taskId]
-            );
-            return subtasks;
+            const { data, error } = await supabase
+                .from('subtasks')
+                .select('*')
+                .eq('task_id', taskId)
+                .order('created_at', { ascending: true });
+            
+            if (error) throw error;
+            return data || [];
         } catch (error) {
             throw error;
         }
@@ -17,11 +20,14 @@ class Subtask {
     // IDでサブタスクを取得
     static async getById(id) {
         try {
-            const subtask = await db.getAsync(
-                'SELECT * FROM subtasks WHERE id = $1',
-                [id]
-            );
-            return subtask;
+            const { data, error } = await supabase
+                .from('subtasks')
+                .select('*')
+                .eq('id', id)
+                .single();
+            
+            if (error) throw error;
+            return data;
         } catch (error) {
             throw error;
         }
@@ -30,11 +36,14 @@ class Subtask {
     // サブタスクを作成
     static async create(taskId, text) {
         try {
-            const result = await db.runAsync(
-                'INSERT INTO subtasks (task_id, text) VALUES ($1, $2) RETURNING id',
-                [taskId, text]
-            );
-            return await this.getById(result.id);
+            const { data, error } = await supabase
+                .from('subtasks')
+                .insert({ task_id: taskId, text })
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return data;
         } catch (error) {
             throw error;
         }
@@ -43,11 +52,15 @@ class Subtask {
     // サブタスクを更新
     static async update(id, text, completed) {
         try {
-            await db.runAsync(
-                'UPDATE subtasks SET text = $1, completed = $2 WHERE id = $3',
-                [text, completed, id]
-            );
-            return await this.getById(id);
+            const { data, error } = await supabase
+                .from('subtasks')
+                .update({ text, completed })
+                .eq('id', id)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return data;
         } catch (error) {
             throw error;
         }
@@ -61,11 +74,16 @@ class Subtask {
                 throw new Error('サブタスクが見つかりません');
             }
             const newCompleted = !subtask.completed;
-            await db.runAsync(
-                'UPDATE subtasks SET completed = $1 WHERE id = $2',
-                [newCompleted, id]
-            );
-            return await this.getById(id);
+            
+            const { data, error } = await supabase
+                .from('subtasks')
+                .update({ completed: newCompleted })
+                .eq('id', id)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return data;
         } catch (error) {
             throw error;
         }
@@ -74,11 +92,13 @@ class Subtask {
     // サブタスクを削除
     static async delete(id) {
         try {
-            const result = await db.runAsync(
-                'DELETE FROM subtasks WHERE id = $1',
-                [id]
-            );
-            return result.changes > 0;
+            const { error } = await supabase
+                .from('subtasks')
+                .delete()
+                .eq('id', id);
+            
+            if (error) throw error;
+            return true;
         } catch (error) {
             throw error;
         }

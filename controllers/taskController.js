@@ -7,6 +7,7 @@ const taskController = {
             const tasks = await Task.getAll();
             res.json(tasks);
         } catch (error) {
+            console.error('タスク取得エラー:', error);
             res.status(500).json({ error: error.message });
         }
     },
@@ -36,6 +37,7 @@ const taskController = {
             const task = await Task.create(text.trim(), category_id || null, due_date || null, validPriority);
             res.status(201).json(task);
         } catch (error) {
+            console.error('タスク作成エラー:', error);
             res.status(500).json({ error: error.message });
         }
     },
