@@ -52,6 +52,30 @@ SELECT * FROM tasks;       # タスクデータ
 
 データベースファイルの場所: `database/todo.db`
 
+## Glitchでのデプロイ
+
+### デプロイ手順
+
+1. **GitHubリポジトリをGlitchにインポート**
+   - [Glitch](https://glitch.com/)にアクセス
+   - 「New Project」→「Import from GitHub」を選択
+   - リポジトリURLを入力: `https://github.com/takeboruta/cursor-demo`
+
+2. **自動デプロイ**
+   - Glitchが自動的に`npm install`を実行
+   - `package.json`の`start`スクリプトが自動実行される
+   - アプリが起動したら、Glitchが提供するURLでアクセス可能
+
+3. **環境変数（必要に応じて）**
+   - Glitchのエディタで`.env`ファイルを作成
+   - `PORT=3000`（通常は自動設定されるため不要）
+
+### Glitchでの注意点
+
+- **データベース**: SQLiteファイルはGlitchの一時ファイルシステムに保存されます
+- **再起動**: Glitchは5分間アクセスがないとスリープします（無料プランの場合）
+- **ログ**: Glitchのエディタで「Tools」→「Logs」からログを確認できます
+
 ## 開発フロー
 
 ### ブランチ戦略
