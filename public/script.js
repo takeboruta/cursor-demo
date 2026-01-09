@@ -17,6 +17,22 @@ const addCategoryBtn = document.getElementById('addCategoryBtn');
 const categoryList = document.getElementById('categoryList');
 const searchInput = document.getElementById('searchInput');
 const filterCategorySelect = document.getElementById('filterCategorySelect');
+const listViewBtn = document.getElementById('listViewBtn');
+const calendarViewBtn = document.getElementById('calendarViewBtn');
+const listView = document.getElementById('listView');
+const calendarView = document.getElementById('calendarView');
+const calendarGrid = document.getElementById('calendarGrid');
+const calendarMonthYear = document.getElementById('calendarMonthYear');
+const prevMonthBtn = document.getElementById('prevMonthBtn');
+const nextMonthBtn = document.getElementById('nextMonthBtn');
+const dateTaskModal = document.getElementById('dateTaskModal');
+const closeDateTaskModal = document.getElementById('closeDateTaskModal');
+const dateTaskInput = document.getElementById('dateTaskInput');
+const dateCategorySelect = document.getElementById('dateCategorySelect');
+const datePrioritySelect = document.getElementById('datePrioritySelect');
+const dateTaskAddBtn = document.getElementById('dateTaskAddBtn');
+const dateTaskModalTitle = document.getElementById('dateTaskModalTitle');
+const dateTaskList = document.getElementById('dateTaskList');
 
 // 優先度の変換関数
 function getPriorityLabel(priority) {
@@ -40,6 +56,10 @@ function getPriorityClass(priority) {
 // データ管理
 let tasks = [];
 let categories = [];
+
+// カレンダー管理
+let currentDate = new Date();
+let selectedDate = null;
 
 // API呼び出し関数
 async function apiCall(endpoint, method = 'GET', body = null) {
@@ -94,6 +114,10 @@ async function loadTasks() {
     try {
         tasks = await apiCall('/tasks');
         renderTasks();
+        // カレンダー表示中の場合、カレンダーも更新
+        if (calendarView && !calendarView.classList.contains('hidden')) {
+            renderCalendar();
+        }
     } catch (error) {
         console.error('タスクの読み込みエラー:', error);
     }
@@ -321,6 +345,10 @@ async function toggleComplete(id) {
     try {
         await apiCall(`/tasks/${id}/toggle`, 'PATCH');
         await loadTasks();
+        // モーダルが開いている場合はタスク一覧を更新
+        if (selectedDate && dateTaskModal && dateTaskModal.style.display === 'block') {
+            renderDateTaskList(selectedDate);
+        }
     } catch (error) {
         console.error('タスク更新エラー:', error);
         alert('タスクの更新に失敗しました');
@@ -336,11 +364,28 @@ async function removeTask(id) {
             try {
                 await apiCall(`/tasks/${id}`, 'DELETE');
                 await loadTasks();
+                // モーダルが開いている場合はタスク一覧を更新
+                if (selectedDate && dateTaskModal && dateTaskModal.style.display === 'block') {
+                    renderDateTaskList(selectedDate);
+                }
             } catch (error) {
                 console.error('タスク削除エラー:', error);
                 alert('タスクの削除に失敗しました');
             }
         }, 300);
+    } else {
+        // リスト表示にない場合（モーダル内など）は直接削除
+        try {
+            await apiCall(`/tasks/${id}`, 'DELETE');
+            await loadTasks();
+            // モーダルが開いている場合はタスク一覧を更新
+            if (selectedDate && dateTaskModal && dateTaskModal.style.display === 'block') {
+                renderDateTaskList(selectedDate);
+            }
+        } catch (error) {
+            console.error('タスク削除エラー:', error);
+            alert('タスクの削除に失敗しました');
+        }
     }
 }
 
@@ -548,11 +593,374 @@ window.addEventListener('click', function(e) {
     if (e.target === categoryModal) {
         closeCategoryModal();
     }
+    if (e.target === dateTaskModal) {
+        closeDateTaskModalFunc();
+    }
 });
+
+// カレンダー機能
+function renderCalendar() {
+    if (!calendarGrid || !calendarMonthYear) {
+        console.error('カレンダー要素が見つかりません');
+        return;
+    }
+    
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    // 月と年の表示を更新
+    calendarMonthYear.textContent = `${year}年${month + 1}月`;
+    
+    // カレンダーグリッドをクリア
+    calendarGrid.innerHTML = '';
+    
+    // 曜日ヘッダー
+    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+    weekdays.forEach(day => {
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'calendar-day-header';
+        dayHeader.textContent = day;
+        calendarGrid.appendChild(dayHeader);
+    });
+    
+    // 月の最初の日と最後の日を取得
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const firstDayOfWeek = firstDay.getDay();
+    const daysInMonth = lastDay.getDate();
+    
+    // 前月の残り日数を表示
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+        const dayCell = createDayCell(prevMonthLastDay - i, year, month - 1, true);
+        calendarGrid.appendChild(dayCell);
+    }
+    
+    // 今月の日付を表示
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayCell = createDayCell(day, year, month, false);
+        calendarGrid.appendChild(dayCell);
+    }
+    
+    // 次月の最初の日を表示（グリッドを埋めるため）
+    const totalCells = calendarGrid.children.length - 7; // 曜日ヘッダーを除く
+    const remainingCells = 42 - totalCells; // 6週分（7列×6行）
+    if (remainingCells > 0) {
+        for (let day = 1; day <= remainingCells && day <= 14; day++) {
+            const dayCell = createDayCell(day, year, month + 1, true);
+            calendarGrid.appendChild(dayCell);
+        }
+    }
+}
+
+function createDayCell(day, year, month, isOtherMonth) {
+    const dayCell = document.createElement('div');
+    dayCell.className = 'calendar-day';
+    if (isOtherMonth) {
+        dayCell.classList.add('other-month');
+    }
+    
+    const date = new Date(year, month, day);
+    const dateStr = formatDate(date);
+    const isToday = isTodayDate(date);
+    
+    if (isToday) {
+        dayCell.classList.add('today');
+    }
+    
+    const dayNumber = document.createElement('div');
+    dayNumber.className = 'day-number';
+    dayNumber.textContent = day;
+    dayCell.appendChild(dayNumber);
+    
+    // その日のタスクを表示
+    const tasksForDay = tasks.filter(task => {
+        if (!task.due_date) return false;
+        // 日付文字列を直接比較（YYYY-MM-DD形式）
+        let taskDateStr = task.due_date;
+        if (taskDateStr.includes('T')) {
+            taskDateStr = taskDateStr.split('T')[0]; // DATETIME形式の場合、Tで分割して日付部分のみ取得
+        }
+        if (taskDateStr.includes(' ')) {
+            taskDateStr = taskDateStr.split(' ')[0]; // スペースで区切られている場合
+        }
+        return taskDateStr === dateStr;
+    });
+    
+    const tasksContainer = document.createElement('div');
+    tasksContainer.className = 'day-tasks';
+    
+    tasksForDay.slice(0, 3).forEach(task => {
+        const taskItem = document.createElement('div');
+        taskItem.className = `day-task ${task.completed ? 'completed' : ''}`;
+        taskItem.textContent = task.text.length > 10 ? task.text.substring(0, 10) + '...' : task.text;
+        taskItem.title = task.text;
+        if (task.category_color) {
+            taskItem.style.borderLeft = `3px solid ${task.category_color}`;
+        }
+        tasksContainer.appendChild(taskItem);
+    });
+    
+    if (tasksForDay.length > 3) {
+        const moreTasks = document.createElement('div');
+        moreTasks.className = 'day-task-more';
+        moreTasks.textContent = `+${tasksForDay.length - 3}`;
+        tasksContainer.appendChild(moreTasks);
+    }
+    
+    dayCell.appendChild(tasksContainer);
+    
+    // 日付セルクリックイベント
+    dayCell.addEventListener('click', () => {
+        selectedDate = dateStr;
+        openDateTaskModal(dateStr);
+    });
+    
+    return dayCell;
+}
+
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function isTodayDate(date) {
+    const today = new Date();
+    return date.getFullYear() === today.getFullYear() &&
+           date.getMonth() === today.getMonth() &&
+           date.getDate() === today.getDate();
+}
+
+function openDateTaskModal(dateStr) {
+    const date = new Date(dateStr);
+    const formattedDate = date.toLocaleDateString('ja-JP', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    dateTaskModalTitle.textContent = `${formattedDate}のタスク`;
+    dateTaskModal.style.display = 'block';
+    
+    // 分類セレクトボックスを更新
+    dateCategorySelect.innerHTML = '<option value="">分類なし</option>';
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        dateCategorySelect.appendChild(option);
+    });
+    
+    // その日のタスク一覧を表示
+    renderDateTaskList(dateStr);
+}
+
+function closeDateTaskModalFunc() {
+    dateTaskModal.style.display = 'none';
+    dateTaskInput.value = '';
+    dateCategorySelect.value = '';
+    datePrioritySelect.value = '2';
+    selectedDate = null;
+    if (dateTaskList) {
+        dateTaskList.innerHTML = '';
+    }
+}
+
+function renderDateTaskList(dateStr) {
+    if (!dateTaskList) return;
+    
+    // その日のタスクを取得
+    const tasksForDay = tasks.filter(task => {
+        if (!task.due_date) return false;
+        let taskDateStr = task.due_date;
+        if (taskDateStr.includes('T')) {
+            taskDateStr = taskDateStr.split('T')[0];
+        }
+        if (taskDateStr.includes(' ')) {
+            taskDateStr = taskDateStr.split(' ')[0];
+        }
+        return taskDateStr === dateStr;
+    });
+    
+    dateTaskList.innerHTML = '';
+    
+    if (tasksForDay.length === 0) {
+        const emptyMessage = document.createElement('p');
+        emptyMessage.className = 'empty-message';
+        emptyMessage.textContent = 'この日にタスクはありません';
+        dateTaskList.appendChild(emptyMessage);
+        return;
+    }
+    
+    tasksForDay.forEach(task => {
+        const taskItem = document.createElement('div');
+        taskItem.className = 'date-task-item';
+        if (task.completed) {
+            taskItem.classList.add('completed');
+        }
+        
+        const taskContent = document.createElement('div');
+        taskContent.className = 'date-task-content';
+        
+        // 分類バッジ
+        if (task.category_name) {
+            const categoryBadge = document.createElement('span');
+            categoryBadge.className = 'category-badge';
+            categoryBadge.textContent = task.category_name;
+            categoryBadge.style.backgroundColor = task.category_color || '#007AFF';
+            taskContent.appendChild(categoryBadge);
+        }
+        
+        // タスクテキスト
+        const taskText = document.createElement('span');
+        taskText.className = 'date-task-text';
+        taskText.textContent = task.text;
+        if (task.completed) {
+            taskText.classList.add('completed');
+        }
+        taskContent.appendChild(taskText);
+        
+        // 優先度バッジ
+        const priorityBadge = document.createElement('span');
+        priorityBadge.className = `priority-badge ${getPriorityClass(task.priority || 2)}`;
+        priorityBadge.textContent = getPriorityLabel(task.priority || 2);
+        taskContent.appendChild(priorityBadge);
+        
+        // 完了ボタン
+        const completeBtn = document.createElement('button');
+        completeBtn.className = 'complete-btn';
+        completeBtn.textContent = task.completed ? '未完了' : '完了';
+        completeBtn.addEventListener('click', async () => {
+            await toggleComplete(task.id);
+            renderDateTaskList(dateStr);
+        });
+        
+        // 削除ボタン
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = '削除';
+        deleteBtn.addEventListener('click', async () => {
+            if (confirm('このタスクを削除しますか？')) {
+                await removeTask(task.id);
+                renderDateTaskList(dateStr);
+            }
+        });
+        
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'button-container';
+        buttonContainer.appendChild(completeBtn);
+        buttonContainer.appendChild(deleteBtn);
+        
+        taskItem.appendChild(taskContent);
+        taskItem.appendChild(buttonContainer);
+        dateTaskList.appendChild(taskItem);
+    });
+}
+
+async function addDateTask() {
+    const taskText = dateTaskInput.value.trim();
+    const categoryId = dateCategorySelect.value || null;
+    const priority = datePrioritySelect.value ? parseInt(datePrioritySelect.value) : 2;
+    
+    if (taskText === '') {
+        return;
+    }
+    
+    if (!selectedDate) {
+        alert('日付が選択されていません');
+        return;
+    }
+    
+    try {
+        await apiCall('/tasks', 'POST', {
+            text: taskText,
+            category_id: categoryId ? parseInt(categoryId) : null,
+            due_date: selectedDate,
+            priority: priority
+        });
+        
+        closeDateTaskModalFunc();
+        await loadTasks();
+        renderCalendar();
+        // モーダルが開いている場合はタスク一覧を更新
+        if (selectedDate) {
+            renderDateTaskList(selectedDate);
+        }
+    } catch (error) {
+        console.error('タスク追加エラー:', error);
+        alert('タスクの追加に失敗しました');
+    }
+}
+
+function showListView() {
+    listView.classList.remove('hidden');
+    calendarView.classList.add('hidden');
+    listViewBtn.classList.add('active');
+    calendarViewBtn.classList.remove('active');
+    document.querySelector('.container').classList.remove('calendar-mode');
+}
+
+function showCalendarView() {
+    listView.classList.add('hidden');
+    calendarView.classList.remove('hidden');
+    listViewBtn.classList.remove('active');
+    calendarViewBtn.classList.add('active');
+    document.querySelector('.container').classList.add('calendar-mode');
+    renderCalendar();
+}
+
+// カレンダーのイベントリスナー
+if (listViewBtn) {
+    listViewBtn.addEventListener('click', showListView);
+}
+if (calendarViewBtn) {
+    calendarViewBtn.addEventListener('click', showCalendarView);
+}
+if (prevMonthBtn) {
+    prevMonthBtn.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar();
+    });
+}
+if (nextMonthBtn) {
+    nextMonthBtn.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar();
+    });
+}
+if (closeDateTaskModal) {
+    closeDateTaskModal.addEventListener('click', closeDateTaskModalFunc);
+}
+if (dateTaskAddBtn) {
+    dateTaskAddBtn.addEventListener('click', addDateTask);
+}
+if (dateTaskInput) {
+    dateTaskInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            addDateTask();
+        }
+    });
+}
 
 // ページ読み込み時にデータを読み込む
 loadCategories();
 loadTasks();
 
+// 初期表示をカレンダー表示に設定
+if (listView && calendarView) {
+    listView.classList.add('hidden');
+    calendarView.classList.remove('hidden');
+    if (listViewBtn) listViewBtn.classList.remove('active');
+    if (calendarViewBtn) calendarViewBtn.classList.add('active');
+    document.querySelector('.container').classList.add('calendar-mode');
+    // カレンダーを初期表示
+    if (calendarGrid) {
+        renderCalendar();
+    }
+}
+
 // ページ読み込み時にフォーカスを設定
-taskInput.focus();
+if (taskInput) {
+    taskInput.focus();
+}
