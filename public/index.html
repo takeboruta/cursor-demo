@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="todo-app">
+            <h1>Todo List</h1>
+            
+            <!-- 分類マスタ管理ボタン -->
+            <div class="header-actions">
+                <button id="manageCategoriesBtn" class="manage-btn">分類管理</button>
+            </div>
+
+            <div class="input-section">
+                <input type="text" id="taskInput" placeholder="新しいタスクを入力..." />
+                <select id="categorySelect" class="category-select">
+                    <option value="">分類なし</option>
+                </select>
+                <button id="addBtn">追加</button>
+            </div>
+            <ul id="taskList" class="task-list"></ul>
+        </div>
+    </div>
+
+    <!-- 分類管理モーダル -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>分類管理</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="category-form">
+                    <input type="text" id="categoryNameInput" placeholder="分類名" />
+                    <input type="color" id="categoryColorInput" value="#007AFF" />
+                    <button id="addCategoryBtn">追加</button>
+                </div>
+                <ul id="categoryList" class="category-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
