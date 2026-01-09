@@ -6,7 +6,8 @@
     "dev": "node server-local.js",
     "dev:vercel": "vercel dev",
     "start": "node server-local.js",
-    "test:db": "node scripts/test-db-connection.js"
+    "test:db": "node scripts/test-db-connection.js",
+    "build": "echo 'No build step required'"
   },
   "keywords": [
     "todo",
