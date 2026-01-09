@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ブログ記事一覧</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .blog-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .blog-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 6px 32px rgba(44, 62, 80, 0.09), 0 1.5px 8px rgba(0, 0, 0, 0.04);
+            padding: 28px 22px 26px 22px;
+            min-width: 270px;
+            max-width: 370px;
+            flex: 1 1 300px;
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+
+        .blog-card:hover {
+            box-shadow: 0 10px 36px rgba(0, 122, 255, 0.14), 0 1.5px 8px rgba(0, 0, 0, 0.04);
+            transform: translateY(-2px) scale(1.016);
+        }
+
+        .blog-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .blog-body {
+            color: #475467;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        .main-title {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #007AFF;
+            margin-top: 36px;
+            margin-bottom: 18px;
+            letter-spacing: -0.5px;
+        }
+
+        @media (max-width: 960px) {
+            .blog-container {
+                max-width: 99vw;
+                padding: 10px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .blog-container {
+                flex-direction: column;
+                gap: 20px;
+                padding: 7vw 0 5vw 0;
+            }
+
+            .blog-card {
+                max-width: 95vw;
+                min-width: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-title">ブログ記事一覧</div>
+    <div class="blog-container" id="blogContainer">
+        <!-- Blog posts here -->
+    </div>
+    <script>
+        // Fetch APIを使ってデータ取得
+        fetch('https://jsonplaceholder.typicode.com/posts')
+            .then(res => res.json())
+            .then(posts => {
+                const blogContainer = document.getElementById('blogContainer');
+                posts.forEach(post => {
+                    const card = document.createElement('div');
+                    card.className = 'blog-card';
+
+                    const title = document.createElement('div');
+                    title.className = 'blog-title';
+                    title.textContent = post.title;
+
+                    const body = document.createElement('div');
+                    body.className = 'blog-body';
+                    body.textContent = post.body;
+
+                    card.appendChild(title);
+                    card.appendChild(body);
+                    blogContainer.appendChild(card);
+                });
+            })
+            .catch(error => {
+                document.getElementById('blogContainer').innerHTML = "<p>記事の読み込みに失敗しました。</p>";
+                console.error(error);
+            });
+    </script>
+</body>
+
+</html>
