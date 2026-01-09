@@ -52,29 +52,58 @@ SELECT * FROM tasks;       # タスクデータ
 
 データベースファイルの場所: `database/todo.db`
 
-## Glitchでのデプロイ
+## デプロイ方法
 
-### デプロイ手順
+### Render（推奨）
 
-1. **GitHubリポジトリをGlitchにインポート**
-   - [Glitch](https://glitch.com/)にアクセス
-   - 「New Project」→「Import from GitHub」を選択
-   - リポジトリURLを入力: `https://github.com/takeboruta/cursor-demo`
+1. **アカウント作成**
+   - [Render](https://render.com/)にアクセスしてアカウントを作成
+   - GitHubアカウントで連携可能
 
-2. **自動デプロイ**
-   - Glitchが自動的に`npm install`を実行
-   - `package.json`の`start`スクリプトが自動実行される
-   - アプリが起動したら、Glitchが提供するURLでアクセス可能
+2. **新しいWebサービスを作成**
+   - 「New」→「Web Service」を選択
+   - GitHubリポジトリを選択: `takeboruta/cursor-demo`
+   - 設定:
+     - **Name**: `todo-app`（任意）
+     - **Environment**: `Node`
+     - **Build Command**: `npm install`
+     - **Start Command**: `npm start`
+     - **Plan**: Free（無料プラン）
 
-3. **環境変数（必要に応じて）**
-   - Glitchのエディタで`.env`ファイルを作成
-   - `PORT=3000`（通常は自動設定されるため不要）
+3. **デプロイ**
+   - 「Create Web Service」をクリック
+   - 自動的にビルドとデプロイが開始されます
+   - デプロイ完了後、提供されるURLでアクセス可能
 
-### Glitchでの注意点
+### Railway
 
-- **データベース**: SQLiteファイルはGlitchの一時ファイルシステムに保存されます
-- **再起動**: Glitchは5分間アクセスがないとスリープします（無料プランの場合）
-- **ログ**: Glitchのエディタで「Tools」→「Logs」からログを確認できます
+1. **アカウント作成**
+   - [Railway](https://railway.app/)にアクセス
+   - GitHubアカウントで連携
+
+2. **プロジェクト作成**
+   - 「New Project」→「Deploy from GitHub repo」を選択
+   - リポジトリを選択
+   - 自動的にデプロイが開始されます
+
+### Fly.io
+
+1. **Fly CLIのインストール**
+   ```bash
+   curl -L https://fly.io/install.sh | sh
+   ```
+
+2. **デプロイ**
+   ```bash
+   fly launch
+   fly deploy
+   ```
+
+### 注意点
+
+- **データベース**: SQLiteファイルは一時ファイルシステムに保存されます（再起動時にリセットされる可能性あり）
+- **本番環境**: 本番環境ではPostgreSQLなどの永続的なデータベースの使用を推奨
+- **環境変数**: 各プラットフォームで環境変数を設定可能
 
 ## 開発フロー
 
