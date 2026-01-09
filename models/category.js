@@ -17,7 +17,7 @@ class Category {
     static async getById(id) {
         try {
             const category = await db.getAsync(
-                'SELECT * FROM categories WHERE id = ?',
+                'SELECT * FROM categories WHERE id = $1',
                 [id]
             );
             return category;
@@ -30,7 +30,7 @@ class Category {
     static async create(name, color = '#007AFF') {
         try {
             const result = await db.runAsync(
-                'INSERT INTO categories (name, color) VALUES (?, ?)',
+                'INSERT INTO categories (name, color) VALUES ($1, $2) RETURNING id',
                 [name, color]
             );
             return await this.getById(result.id);
@@ -43,7 +43,7 @@ class Category {
     static async update(id, name, color) {
         try {
             await db.runAsync(
-                'UPDATE categories SET name = ?, color = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                'UPDATE categories SET name = $1, color = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
                 [name, color, id]
             );
             return await this.getById(id);
@@ -56,7 +56,7 @@ class Category {
     static async delete(id) {
         try {
             const result = await db.runAsync(
-                'DELETE FROM categories WHERE id = ?',
+                'DELETE FROM categories WHERE id = $1',
                 [id]
             );
             return result.changes > 0;

@@ -5,13 +5,10 @@ class Subtask {
     static async getByTaskId(taskId) {
         try {
             const subtasks = await db.allAsync(
-                'SELECT * FROM subtasks WHERE task_id = ? ORDER BY created_at ASC',
+                'SELECT * FROM subtasks WHERE task_id = $1 ORDER BY created_at ASC',
                 [taskId]
             );
-            return subtasks.map(subtask => ({
-                ...subtask,
-                completed: subtask.completed === 1
-            }));
+            return subtasks;
         } catch (error) {
             throw error;
         }
@@ -21,12 +18,9 @@ class Subtask {
     static async getById(id) {
         try {
             const subtask = await db.getAsync(
-                'SELECT * FROM subtasks WHERE id = ?',
+                'SELECT * FROM subtasks WHERE id = $1',
                 [id]
             );
-            if (subtask) {
-                subtask.completed = subtask.completed === 1;
-            }
             return subtask;
         } catch (error) {
             throw error;
@@ -37,7 +31,7 @@ class Subtask {
     static async create(taskId, text) {
         try {
             const result = await db.runAsync(
-                'INSERT INTO subtasks (task_id, text) VALUES (?, ?)',
+                'INSERT INTO subtasks (task_id, text) VALUES ($1, $2) RETURNING id',
                 [taskId, text]
             );
             return await this.getById(result.id);
@@ -50,8 +44,8 @@ class Subtask {
     static async update(id, text, completed) {
         try {
             await db.runAsync(
-                'UPDATE subtasks SET text = ?, completed = ? WHERE id = ?',
-                [text, completed ? 1 : 0, id]
+                'UPDATE subtasks SET text = $1, completed = $2 WHERE id = $3',
+                [text, completed, id]
             );
             return await this.getById(id);
         } catch (error) {
@@ -68,8 +62,8 @@ class Subtask {
             }
             const newCompleted = !subtask.completed;
             await db.runAsync(
-                'UPDATE subtasks SET completed = ? WHERE id = ?',
-                [newCompleted ? 1 : 0, id]
+                'UPDATE subtasks SET completed = $1 WHERE id = $2',
+                [newCompleted, id]
             );
             return await this.getById(id);
         } catch (error) {
@@ -81,7 +75,7 @@ class Subtask {
     static async delete(id) {
         try {
             const result = await db.runAsync(
-                'DELETE FROM subtasks WHERE id = ?',
+                'DELETE FROM subtasks WHERE id = $1',
                 [id]
             );
             return result.changes > 0;

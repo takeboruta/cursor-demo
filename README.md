@@ -1,26 +1,57 @@
 # Todo List App
 
-タスク管理アプリケーション（データベース保存対応）
+タスク管理アプリケーション（Vercel + Supabase構成）
 
 ## 機能
 
 - タスクの追加・完了・削除
 - 分類マスタ管理
 - タスクに分類を設定
-- データベース保存（SQLite）
+- サブタスク機能
+- 期限日・優先度設定
+- カレンダー表示・リスト表示の切り替え
+- 検索・フィルター機能
+- データベース保存（Supabase PostgreSQL）
 
 ## セットアップ
+
+### ローカル開発環境
 
 ```bash
 # 依存関係のインストール
 npm install
 
-# サーバー起動
-npm start
+# 環境変数の設定
+# .env.local ファイルを作成し、以下を設定:
+# DATABASE_URL=postgresql://user:password@host:port/database
+# 
+# Supabaseの場合、接続文字列は以下の形式:
+# postgresql://postgres:[YOUR-PASSWORD]@[YOUR-PROJECT-REF].supabase.co:5432/postgres
+# 
+# Supabaseダッシュボードの「Settings」→「Database」→「Connection string」から取得可能
 
-# 開発モード（自動再起動）
+# 開発サーバー起動（Vercel CLI使用）
 npm run dev
 ```
+
+### Supabaseプロジェクトのセットアップ
+
+1. **Supabaseプロジェクトを作成**
+   - [Supabase](https://supabase.com/)にアクセス
+   - 新しいプロジェクトを作成
+
+2. **データベーススキーマの適用**
+   - 方法1: アプリ起動時に自動的にテーブルが作成されます（`database/db.js`の`initializeDatabase`関数）
+   - 方法2: 手動でスキーマを適用する場合
+     - Supabaseダッシュボードの「SQL Editor」を開く
+     - `database/schema.sql`の内容をコピー＆ペースト
+     - 「Run」をクリックしてスキーマを適用
+
+3. **環境変数の取得**
+   - Supabaseダッシュボードの「Settings」→「Database」を開く
+   - 「Connection string」セクションで「URI」を選択
+   - 接続文字列をコピー（パスワード部分を実際のパスワードに置き換える）
+   - `DATABASE_URL`環境変数として設定
 
 ## データベースの確認方法
 
@@ -43,14 +74,68 @@ SELECT * FROM tasks;       # タスクデータ
 .quit                # 終了
 ```
 
-### 方法3: データベースビューアーツール
+## データベースの確認方法（Supabase）
 
-以下のツールを使用できます：
-- **DB Browser for SQLite** (https://sqlitebrowser.org/)
-- **TablePlus** (https://tableplus.com/)
-- **VS Code拡張機能**: SQLite Viewer
+### Supabaseダッシュボードを使用
 
-データベースファイルの場所: `database/todo.db`
+1. **Supabaseダッシュボードにアクセス**
+   - プロジェクトのダッシュボードを開く
+
+2. **Table Editor**
+   - 左メニューの「Table Editor」をクリック
+   - テーブル一覧が表示され、データを確認・編集可能
+
+3. **SQL Editor**
+   - 左メニューの「SQL Editor」をクリック
+   - SQLクエリを実行してデータを確認
+   ```sql
+   SELECT * FROM categories;
+   SELECT * FROM tasks;
+   SELECT * FROM subtasks;
+   ```
+
+## デプロイ方法（Vercel + Supabase）
+
+### 1. Supabaseプロジェクトの準備
+
+1. **Supabaseプロジェクトを作成**
+   - [Supabase](https://supabase.com/)でプロジェクトを作成
+   - `database/schema.sql`をSQL Editorで実行してスキーマを適用
+
+2. **環境変数を取得**
+   - Supabaseダッシュボードの「Settings」→「API」
+   - `Project URL`と`anon public`キーをメモ
+
+### 2. Vercelへのデプロイ
+
+1. **Vercelアカウント作成**
+   - [Vercel](https://vercel.com/)にアクセス
+   - GitHubアカウントでサインアップ
+
+2. **プロジェクトをインポート**
+   - 「Add New」→「Project」を選択
+   - GitHubリポジトリを選択: `takeboruta/cursor-demo`
+   - 「Import」をクリック
+
+3. **環境変数を設定**
+   - 「Environment Variables」セクションで以下を追加:
+     - `DATABASE_URL`: Supabaseの接続文字列（postgresql://...形式）
+     - Supabaseダッシュボードの「Settings」→「Database」→「Connection string」から取得
+
+4. **デプロイ**
+   - 「Deploy」をクリック
+   - 自動的にビルドとデプロイが開始されます
+   - デプロイ完了後、提供されるURLでアクセス可能
+
+### 3. カスタムドメイン（オプション）
+
+- Vercelダッシュボードの「Settings」→「Domains」からカスタムドメインを設定可能
+
+### 注意点
+
+- **データベース**: Supabase PostgreSQLを使用（永続的なデータベース）
+- **環境変数**: Vercelの環境変数で`SUPABASE_URL`と`SUPABASE_ANON_KEY`を設定
+- **自動デプロイ**: GitHubにプッシュすると自動的にデプロイされます
 
 ## 開発フロー
 
