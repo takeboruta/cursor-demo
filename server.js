@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const taskRoutes = require('./routes/tasks');
 const categoryRoutes = require('./routes/categories');
+const subtaskRoutes = require('./routes/subtasks');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,6 +19,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // APIルート
 app.use('/api/tasks', taskRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/subtasks', subtaskRoutes);
 
 // ルートパスでindex.htmlを提供
 app.get('/', (req, res) => {
