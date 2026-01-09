@@ -20,10 +20,7 @@ class Task {
                 LEFT JOIN categories c ON t.category_id = c.id
                 ORDER BY t.priority ASC, t.created_at DESC
             `);
-            return tasks.map(task => ({
-                ...task,
-                completed: task.completed === 1
-            }));
+            return tasks;
         } catch (error) {
             throw error;
         }
@@ -46,11 +43,8 @@ class Task {
                     c.color as category_color
                 FROM tasks t
                 LEFT JOIN categories c ON t.category_id = c.id
-                WHERE t.id = ?
+                WHERE t.id = $1
             `, [id]);
-            if (task) {
-                task.completed = task.completed === 1;
-            }
             return task;
         } catch (error) {
             throw error;
@@ -61,7 +55,7 @@ class Task {
     static async create(text, categoryId = null, dueDate = null, priority = 2) {
         try {
             const result = await db.runAsync(
-                'INSERT INTO tasks (text, category_id, due_date, priority) VALUES (?, ?, ?, ?)',
+                'INSERT INTO tasks (text, category_id, due_date, priority) VALUES ($1, $2, $3, $4) RETURNING id',
                 [text, categoryId, dueDate, priority]
             );
             return await this.getById(result.id);
@@ -74,8 +68,8 @@ class Task {
     static async update(id, text, completed, categoryId, dueDate = null, priority = 2) {
         try {
             await db.runAsync(
-                'UPDATE tasks SET text = ?, completed = ?, category_id = ?, due_date = ?, priority = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                [text, completed ? 1 : 0, categoryId, dueDate, priority, id]
+                'UPDATE tasks SET text = $1, completed = $2, category_id = $3, due_date = $4, priority = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6',
+                [text, completed, categoryId, dueDate, priority, id]
             );
             return await this.getById(id);
         } catch (error) {
@@ -92,8 +86,8 @@ class Task {
             }
             const newCompleted = !task.completed;
             await db.runAsync(
-                'UPDATE tasks SET completed = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                [newCompleted ? 1 : 0, id]
+                'UPDATE tasks SET completed = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+                [newCompleted, id]
             );
             return await this.getById(id);
         } catch (error) {
@@ -105,7 +99,7 @@ class Task {
     static async delete(id) {
         try {
             const result = await db.runAsync(
-                'DELETE FROM tasks WHERE id = ?',
+                'DELETE FROM tasks WHERE id = $1',
                 [id]
             );
             return result.changes > 0;

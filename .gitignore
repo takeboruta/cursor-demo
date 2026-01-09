@@ -2,4 +2,6 @@ node_modules/
 database/todo.db
 database/todo.db-journal
 .env
+.env.local
 .DS_Store
+.vercel
