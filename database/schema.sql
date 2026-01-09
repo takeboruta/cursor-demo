@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     text TEXT NOT NULL,
     completed INTEGER DEFAULT 0,
     category_id INTEGER,
+    due_date DATETIME,
+    priority INTEGER DEFAULT 2,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL

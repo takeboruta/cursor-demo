@@ -27,11 +27,13 @@ const taskController = {
     // タスクを作成
     create: async (req, res) => {
         try {
-            const { text, category_id } = req.body;
+            const { text, category_id, due_date, priority } = req.body;
             if (!text || text.trim() === '') {
                 return res.status(400).json({ error: 'タスクのテキストが必要です' });
             }
-            const task = await Task.create(text.trim(), category_id || null);
+            // priorityの検証: 1=High, 2=Medium, 3=Low
+            const validPriority = priority && [1, 2, 3].includes(parseInt(priority)) ? parseInt(priority) : 2;
+            const task = await Task.create(text.trim(), category_id || null, due_date || null, validPriority);
             res.status(201).json(task);
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -41,12 +43,16 @@ const taskController = {
     // タスクを更新
     update: async (req, res) => {
         try {
-            const { text, completed, category_id } = req.body;
+            const { text, completed, category_id, due_date, priority } = req.body;
+            // priorityの検証: 1=High, 2=Medium, 3=Low
+            const validPriority = priority && [1, 2, 3].includes(parseInt(priority)) ? parseInt(priority) : 2;
             const task = await Task.update(
                 req.params.id,
                 text,
                 completed,
-                category_id
+                category_id,
+                due_date || null,
+                validPriority
             );
             if (!task) {
                 return res.status(404).json({ error: 'タスクが見つかりません' });

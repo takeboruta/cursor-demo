@@ -4,6 +4,8 @@ const API_BASE = '/api';
 // DOM要素の取得
 const taskInput = document.getElementById('taskInput');
 const categorySelect = document.getElementById('categorySelect');
+const dueDateInput = document.getElementById('dueDateInput');
+const prioritySelect = document.getElementById('prioritySelect');
 const addBtn = document.getElementById('addBtn');
 const taskList = document.getElementById('taskList');
 const manageCategoriesBtn = document.getElementById('manageCategoriesBtn');
@@ -13,6 +15,27 @@ const categoryNameInput = document.getElementById('categoryNameInput');
 const categoryColorInput = document.getElementById('categoryColorInput');
 const addCategoryBtn = document.getElementById('addCategoryBtn');
 const categoryList = document.getElementById('categoryList');
+const searchInput = document.getElementById('searchInput');
+const filterCategorySelect = document.getElementById('filterCategorySelect');
+
+// 優先度の変換関数
+function getPriorityLabel(priority) {
+    const priorityMap = {
+        1: '高',
+        2: '中',
+        3: '低'
+    };
+    return priorityMap[priority] || '中';
+}
+
+function getPriorityClass(priority) {
+    const classMap = {
+        1: 'priority-high',
+        2: 'priority-medium',
+        3: 'priority-low'
+    };
+    return classMap[priority] || 'priority-medium';
+}
 
 // データ管理
 let tasks = [];
@@ -52,11 +75,17 @@ async function loadCategories() {
 // 分類セレクトボックスを描画
 function renderCategorySelect() {
     categorySelect.innerHTML = '<option value="">分類なし</option>';
+    filterCategorySelect.innerHTML = '<option value="">すべての分類</option>';
     categories.forEach(category => {
         const option = document.createElement('option');
         option.value = category.id;
         option.textContent = category.name;
         categorySelect.appendChild(option);
+        
+        const filterOption = document.createElement('option');
+        filterOption.value = category.id;
+        filterOption.textContent = category.name;
+        filterCategorySelect.appendChild(filterOption);
     });
 }
 
@@ -70,11 +99,32 @@ async function loadTasks() {
     }
 }
 
+// タスクをフィルタリングする関数
+function filterTasks() {
+    const searchText = searchInput.value.trim().toLowerCase();
+    const filterCategoryId = filterCategorySelect.value;
+    
+    return tasks.filter(task => {
+        // 検索テキストでフィルタリング
+        const matchesSearch = !searchText || task.text.toLowerCase().includes(searchText);
+        
+        // 分類でフィルタリング
+        const matchesCategory = !filterCategoryId || 
+            (filterCategoryId === '' && !task.category_id) ||
+            (task.category_id && parseInt(task.category_id) === parseInt(filterCategoryId));
+        
+        return matchesSearch && matchesCategory;
+    });
+}
+
 // タスクを表示する関数
 function renderTasks() {
     taskList.innerHTML = '';
     
-    tasks.forEach((task) => {
+    // フィルタリングされたタスクを取得
+    const filteredTasks = filterTasks();
+    
+    filteredTasks.forEach((task) => {
         const taskItem = document.createElement('li');
         taskItem.className = 'task-item';
         taskItem.dataset.id = task.id;
@@ -105,6 +155,41 @@ function renderTasks() {
         }
         
         taskContent.appendChild(taskTextSpan);
+        
+        // 優先度の表示
+        const prioritySpan = document.createElement('span');
+        prioritySpan.className = `priority-badge ${getPriorityClass(task.priority || 2)}`;
+        prioritySpan.textContent = getPriorityLabel(task.priority || 2);
+        taskContent.appendChild(prioritySpan);
+        
+        // 期限日の表示
+        if (task.due_date) {
+            const dueDateSpan = document.createElement('span');
+            dueDateSpan.className = 'due-date';
+            const dueDate = new Date(task.due_date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dueDateOnly = new Date(dueDate);
+            dueDateOnly.setHours(0, 0, 0, 0);
+            
+            // 日付フォーマット（YYYY-MM-DD形式から表示用に変換）
+            const formattedDate = dueDate.toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            dueDateSpan.textContent = `期限: ${formattedDate}`;
+            
+            // 期限切れの場合は警告スタイルを適用
+            if (!task.completed && dueDateOnly < today) {
+                dueDateSpan.classList.add('due-date-overdue');
+            } else if (!task.completed && dueDateOnly.getTime() === today.getTime()) {
+                dueDateSpan.classList.add('due-date-today');
+            }
+            
+            taskContent.appendChild(dueDateSpan);
+        }
         
         // 完了ボタン
         const completeBtn = document.createElement('button');
@@ -141,6 +226,8 @@ function renderTasks() {
 async function addTask() {
     const taskText = taskInput.value.trim();
     const categoryId = categorySelect.value || null;
+    const dueDate = dueDateInput.value || null;
+    const priority = prioritySelect.value ? parseInt(prioritySelect.value) : 2;
     
     if (taskText === '') {
         return;
@@ -149,12 +236,16 @@ async function addTask() {
     try {
         await apiCall('/tasks', 'POST', {
             text: taskText,
-            category_id: categoryId ? parseInt(categoryId) : null
+            category_id: categoryId ? parseInt(categoryId) : null,
+            due_date: dueDate,
+            priority: priority
         });
         
         // 入力欄をクリア
         taskInput.value = '';
         categorySelect.value = '';
+        dueDateInput.value = '';
+        prioritySelect.value = '2'; // デフォルトに戻す
         taskInput.focus();
         
         // タスクを再読み込み
@@ -273,6 +364,15 @@ addBtn.addEventListener('click', addTask);
 manageCategoriesBtn.addEventListener('click', openCategoryModal);
 closeModal.addEventListener('click', closeCategoryModal);
 addCategoryBtn.addEventListener('click', addCategory);
+
+// 検索・フィルターのイベントリスナー
+searchInput.addEventListener('input', () => {
+    renderTasks();
+});
+
+filterCategorySelect.addEventListener('change', () => {
+    renderTasks();
+});
 
 // Enterキーでタスクを追加
 taskInput.addEventListener('keypress', function(e) {

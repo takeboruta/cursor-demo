@@ -61,6 +61,55 @@ h1 {
     transform: translateY(-1px);
 }
 
+.filter-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.search-input {
+    flex: 1;
+    padding: 12px 18px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    outline: none;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    color: #2c3e50;
+    min-width: 200px;
+}
+
+.search-input:focus {
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.search-input::placeholder {
+    color: #999;
+}
+
+.filter-category-select {
+    padding: 12px 18px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    outline: none;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    color: #2c3e50;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+.filter-category-select:focus {
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
 .input-section {
     display: flex;
     gap: 10px;
@@ -106,6 +155,44 @@ h1 {
 }
 
 .category-select:focus {
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.priority-select {
+    padding: 12px 18px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    outline: none;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    color: #2c3e50;
+    cursor: pointer;
+    min-width: 80px;
+}
+
+.priority-select:focus {
+    border-color: #007AFF;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.due-date-input {
+    padding: 12px 18px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    outline: none;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    color: #2c3e50;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+.due-date-input:focus {
     border-color: #007AFF;
     box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
@@ -205,6 +292,67 @@ h1 {
     transition: all 0.3s ease;
     position: relative;
     min-width: 0;
+}
+
+.due-date {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #2c3e50;
+    background: #f0f0f0;
+    margin-left: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.due-date-today {
+    background: #fff3cd;
+    color: #856404;
+    font-weight: 600;
+}
+
+.due-date-overdue {
+    background: #f8d7da;
+    color: #721c24;
+    font-weight: 600;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+.priority-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.priority-high {
+    background: #ff3b30;
+    color: white;
+}
+
+.priority-medium {
+    background: #ff9500;
+    color: white;
+}
+
+.priority-low {
+    background: #8E8E93;
+    color: white;
 }
 
 .task-text.completed {

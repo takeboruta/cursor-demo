@@ -18,10 +18,24 @@
                 <button id="manageCategoriesBtn" class="manage-btn">分類管理</button>
             </div>
 
+            <!-- 検索・フィルターセクション -->
+            <div class="filter-section">
+                <input type="text" id="searchInput" class="search-input" placeholder="タスクを検索..." />
+                <select id="filterCategorySelect" class="filter-category-select">
+                    <option value="">すべての分類</option>
+                </select>
+            </div>
+
             <div class="input-section">
                 <input type="text" id="taskInput" placeholder="新しいタスクを入力..." />
                 <select id="categorySelect" class="category-select">
                     <option value="">分類なし</option>
+                </select>
+                <input type="date" id="dueDateInput" class="due-date-input" />
+                <select id="prioritySelect" class="priority-select">
+                    <option value="1">高</option>
+                    <option value="2" selected>中</option>
+                    <option value="3">低</option>
                 </select>
                 <button id="addBtn">追加</button>
             </div>

@@ -10,13 +10,15 @@ class Task {
                     t.text,
                     t.completed,
                     t.category_id,
+                    t.due_date,
+                    t.priority,
                     t.created_at,
                     t.updated_at,
                     c.name as category_name,
                     c.color as category_color
                 FROM tasks t
                 LEFT JOIN categories c ON t.category_id = c.id
-                ORDER BY t.created_at DESC
+                ORDER BY t.priority ASC, t.created_at DESC
             `);
             return tasks.map(task => ({
                 ...task,
@@ -36,6 +38,8 @@ class Task {
                     t.text,
                     t.completed,
                     t.category_id,
+                    t.due_date,
+                    t.priority,
                     t.created_at,
                     t.updated_at,
                     c.name as category_name,
@@ -54,11 +58,11 @@ class Task {
     }
 
     // タスクを作成
-    static async create(text, categoryId = null) {
+    static async create(text, categoryId = null, dueDate = null, priority = 2) {
         try {
             const result = await db.runAsync(
-                'INSERT INTO tasks (text, category_id) VALUES (?, ?)',
-                [text, categoryId]
+                'INSERT INTO tasks (text, category_id, due_date, priority) VALUES (?, ?, ?, ?)',
+                [text, categoryId, dueDate, priority]
             );
             return await this.getById(result.id);
         } catch (error) {
@@ -67,11 +71,11 @@ class Task {
     }
 
     // タスクを更新
-    static async update(id, text, completed, categoryId) {
+    static async update(id, text, completed, categoryId, dueDate = null, priority = 2) {
         try {
             await db.runAsync(
-                'UPDATE tasks SET text = ?, completed = ?, category_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                [text, completed ? 1 : 0, categoryId, id]
+                'UPDATE tasks SET text = ?, completed = ?, category_id = ?, due_date = ?, priority = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [text, completed ? 1 : 0, categoryId, dueDate, priority, id]
             );
             return await this.getById(id);
         } catch (error) {
