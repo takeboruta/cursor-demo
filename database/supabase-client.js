@@ -12,6 +12,16 @@ if (fs.existsSync(envPath)) {
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
+// デバッグ情報（Render環境でのトラブルシューティング用）
+const isRender = process.env.RENDER === 'true' || process.env.RENDER_SERVICE_NAME;
+if (isRender) {
+    console.log('🔍 Render環境を検出しました');
+    console.log(`  環境変数の状態:`);
+    console.log(`    SUPABASE_URL: ${supabaseUrl ? '設定済み (' + supabaseUrl.substring(0, 30) + '...)' : '未設定'}`);
+    console.log(`    SUPABASE_ANON_KEY: ${supabaseKey ? '設定済み (' + supabaseKey.substring(0, 30) + '...)' : '未設定'}`);
+    console.log(`    利用可能な環境変数: ${Object.keys(process.env).filter(k => k.includes('SUPABASE')).join(', ') || 'なし'}`);
+}
+
 if (!supabaseUrl || !supabaseKey) {
     console.error('❌ エラー: Supabaseの環境変数が設定されていません。');
     console.error('SUPABASE_URL と SUPABASE_ANON_KEY を設定してください。');
@@ -26,11 +36,12 @@ if (!supabaseUrl || !supabaseKey) {
     console.error('');
     
     // 環境変数の設定方法を環境に応じて表示
-    const isRender = process.env.RENDER || process.env.PORT; // Render環境の判定
     if (isRender) {
         console.error('Render環境の場合:');
-        console.error('  Renderダッシュボードの「Environment」セクションで環境変数を設定してください。');
-        throw new Error('Supabaseの環境変数が設定されていません。Renderダッシュボードの「Environment」セクションでSUPABASE_URLとSUPABASE_ANON_KEYを設定してください。');
+        console.error('  1. Renderダッシュボードの「Environment」セクションで環境変数を設定');
+        console.error('  2. 「Save, rebuild, and deploy」ボタンをクリックして再デプロイ');
+        console.error('  3. 環境変数のキー名が正確か確認（大文字小文字を含む）');
+        throw new Error('Supabaseの環境変数が設定されていません。Renderダッシュボードの「Environment」セクションでSUPABASE_URLとSUPABASE_ANON_KEYを設定し、「Save, rebuild, and deploy」を実行してください。');
     } else {
         console.error('ローカル環境の場合:');
         console.error('  .env.localファイルにSUPABASE_URLとSUPABASE_ANON_KEYを設定してください。');
