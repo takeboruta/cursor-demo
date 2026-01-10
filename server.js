@@ -12,7 +12,6 @@ if (fs.existsSync(path.join(__dirname, '.env.local'))) {
 
 // ミドルウェア
 app.use(express.json());
-app.use(express.static('public'));
 
 // CORS設定
 app.use((req, res, next) => {
@@ -25,6 +24,9 @@ app.use((req, res, next) => {
     }
     next();
 });
+
+// 静的ファイルの配信（publicフォルダ）
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Vercel API Routes形式のハンドラーをExpress形式に変換するラッパー
 function wrapVercelHandler(handler) {
@@ -73,9 +75,19 @@ app.put('/api/subtasks/:id', wrapVercelHandler(require('./api/subtasks/[id].js')
 app.delete('/api/subtasks/:id', wrapVercelHandler(require('./api/subtasks/[id].js')));
 app.patch('/api/subtasks/:id/toggle', wrapVercelHandler(require('./api/subtasks/[id]/toggle.js')));
 
-// ルートパス
+// ルートパス（APIルート以外の全てのパスでindex.htmlを返す - SPA用）
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// SPA用フォールバック：API以外の全てのGETリクエストでindex.htmlを返す
+app.get('*', (req, res) => {
+    // APIルートでない場合のみindex.htmlを返す
+    if (!req.path.startsWith('/api/')) {
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    } else {
+        res.status(404).json({ error: 'Not Found' });
+    }
 });
 
 // サーバー起動
