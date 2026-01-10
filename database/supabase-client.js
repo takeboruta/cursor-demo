@@ -23,9 +23,19 @@ if (!supabaseUrl || !supabaseKey) {
     console.error('現在の環境変数の状態:');
     console.error(`  SUPABASE_URL: ${supabaseUrl ? '設定済み' : '未設定'}`);
     console.error(`  SUPABASE_ANON_KEY: ${supabaseKey ? '設定済み' : '未設定'}`);
+    console.error('');
     
-    // 環境変数が設定されていない場合は、エラーを投げる
-    throw new Error('Supabaseの環境変数が設定されていません。.env.localファイルにSUPABASE_URLとSUPABASE_ANON_KEYを設定してください。');
+    // 環境変数の設定方法を環境に応じて表示
+    const isRender = process.env.RENDER || process.env.PORT; // Render環境の判定
+    if (isRender) {
+        console.error('Render環境の場合:');
+        console.error('  Renderダッシュボードの「Environment」セクションで環境変数を設定してください。');
+        throw new Error('Supabaseの環境変数が設定されていません。Renderダッシュボードの「Environment」セクションでSUPABASE_URLとSUPABASE_ANON_KEYを設定してください。');
+    } else {
+        console.error('ローカル環境の場合:');
+        console.error('  .env.localファイルにSUPABASE_URLとSUPABASE_ANON_KEYを設定してください。');
+        throw new Error('Supabaseの環境変数が設定されていません。.env.localファイルにSUPABASE_URLとSUPABASE_ANON_KEYを設定してください。');
+    }
 }
 
 // Supabaseクライアントを作成
