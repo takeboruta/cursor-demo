@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: todo-app
+    env: node
+    plan: free
+    region: singapore  # または ap-southeast-1, 任意のリージョン
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # 以下の環境変数はRenderダッシュボードで設定してください
+      # - key: SUPABASE_URL
+      #   value: your-supabase-url
+      # - key: SUPABASE_ANON_KEY
+      #   value: your-supabase-anon-key
+    healthCheckPath: /
+    autoDeploy: true

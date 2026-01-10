@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "node server-local.js",
     "dev:vercel": "vercel dev",
-    "start": "node server-local.js",
+    "start": "node server.js",
     "test:db": "node scripts/test-db-connection.js"
   },
+  "main": "server.js",
   "keywords": [
     "todo",
     "task",

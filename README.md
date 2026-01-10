@@ -94,7 +94,7 @@ SELECT * FROM tasks;       # タスクデータ
    SELECT * FROM subtasks;
    ```
 
-## デプロイ方法（Vercel + Supabase）
+## デプロイ方法（Render / Railway / Fly.io + Supabase）
 
 ### 1. Supabaseプロジェクトの準備
 
@@ -103,39 +103,75 @@ SELECT * FROM tasks;       # タスクデータ
    - `database/schema.sql`をSQL Editorで実行してスキーマを適用
 
 2. **環境変数を取得**
-   - Supabaseダッシュボードの「Settings」→「API」
-   - `Project URL`と`anon public`キーをメモ
+   - Supabaseダッシュボードの「Settings」→「API」を開く
+   - `Project URL` → `SUPABASE_URL`として使用
+   - `anon public`キー → `SUPABASE_ANON_KEY`として使用
 
-### 2. Vercelへのデプロイ
+### 2. Renderへのデプロイ（推奨）
 
-1. **Vercelアカウント作成**
-   - [Vercel](https://vercel.com/)にアクセス
-   - GitHubアカウントでサインアップ
+1. **アカウント作成**
+   - [Render](https://render.com/)にアクセスしてアカウントを作成
+   - GitHubアカウントで連携可能
 
-2. **プロジェクトをインポート**
-   - 「Add New」→「Project」を選択
+2. **新しいWebサービスを作成**
+   - 「New」→「Web Service」を選択
    - GitHubリポジトリを選択: `takeboruta/cursor-demo`
-   - 「Import」をクリック
+   - 設定:
+     - **Name**: `todo-app`（任意）
+     - **Environment**: `Node`
+     - **Build Command**: `npm install`
+     - **Start Command**: `npm start`
+     - **Plan**: Free（無料プラン）
 
 3. **環境変数を設定**
-   - 「Environment Variables」セクションで以下を追加:
-     - `DATABASE_URL`: Supabaseの接続文字列（postgresql://...形式）
-     - Supabaseダッシュボードの「Settings」→「Database」→「Connection string」から取得
+   - 「Environment」セクションで以下を追加:
+     - `SUPABASE_URL`: `https://caugqusfzpbdrmlryffw.supabase.co`
+     - `SUPABASE_ANON_KEY`: Supabaseのanon publicキー
 
 4. **デプロイ**
-   - 「Deploy」をクリック
+   - 「Create Web Service」をクリック
    - 自動的にビルドとデプロイが開始されます
    - デプロイ完了後、提供されるURLでアクセス可能
 
-### 3. カスタムドメイン（オプション）
+### 3. Railwayへのデプロイ
 
-- Vercelダッシュボードの「Settings」→「Domains」からカスタムドメインを設定可能
+1. **アカウント作成**
+   - [Railway](https://railway.app/)にアクセス
+   - GitHubアカウントで連携
+
+2. **プロジェクト作成**
+   - 「New Project」→「Deploy from GitHub repo」を選択
+   - リポジトリを選択
+   - 環境変数を設定:
+     - `SUPABASE_URL`
+     - `SUPABASE_ANON_KEY`
+   - 自動的にデプロイが開始されます
+
+### 4. Fly.ioへのデプロイ
+
+1. **Fly CLIのインストール**
+   ```bash
+   curl -L https://fly.io/install.sh | sh
+   ```
+
+2. **ログイン**
+   ```bash
+   fly auth login
+   ```
+
+3. **デプロイ**
+   ```bash
+   fly launch
+   fly secrets set SUPABASE_URL=https://caugqusfzpbdrmlryffw.supabase.co
+   fly secrets set SUPABASE_ANON_KEY=your-anon-key
+   fly deploy
+   ```
 
 ### 注意点
 
 - **データベース**: Supabase PostgreSQLを使用（永続的なデータベース）
-- **環境変数**: Vercelの環境変数で`SUPABASE_URL`と`SUPABASE_ANON_KEY`を設定
-- **自動デプロイ**: GitHubにプッシュすると自動的にデプロイされます
+- **環境変数**: 各プラットフォームで`SUPABASE_URL`と`SUPABASE_ANON_KEY`を設定
+- **自動デプロイ**: GitHubにプッシュすると自動的にデプロイされます（Render/Railway）
 
 ## 開発フロー
 
