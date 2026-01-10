@@ -13,13 +13,18 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
 // デバッグ情報（Render環境でのトラブルシューティング用）
-const isRender = process.env.RENDER === 'true' || process.env.RENDER_SERVICE_NAME;
+const isRender = process.env.RENDER === 'true' || process.env.RENDER_SERVICE_NAME || process.env.RENDER_SERVICE_ID;
 if (isRender) {
     console.log('🔍 Render環境を検出しました');
-    console.log(`  環境変数の状態:`);
+    console.log(`  Render環境変数:`);
+    console.log(`    RENDER: ${process.env.RENDER || '未設定'}`);
+    console.log(`    RENDER_SERVICE_NAME: ${process.env.RENDER_SERVICE_NAME || '未設定'}`);
+    console.log(`    RENDER_SERVICE_ID: ${process.env.RENDER_SERVICE_ID || '未設定'}`);
+    console.log(`  Supabase環境変数の状態:`);
     console.log(`    SUPABASE_URL: ${supabaseUrl ? '設定済み (' + supabaseUrl.substring(0, 30) + '...)' : '未設定'}`);
     console.log(`    SUPABASE_ANON_KEY: ${supabaseKey ? '設定済み (' + supabaseKey.substring(0, 30) + '...)' : '未設定'}`);
-    console.log(`    利用可能な環境変数: ${Object.keys(process.env).filter(k => k.includes('SUPABASE')).join(', ') || 'なし'}`);
+    console.log(`    利用可能なSUPABASE関連の環境変数: ${Object.keys(process.env).filter(k => k.includes('SUPABASE')).join(', ') || 'なし'}`);
+    console.log(`  すべての環境変数キー（最初の20個）: ${Object.keys(process.env).slice(0, 20).join(', ')}`);
 }
 
 if (!supabaseUrl || !supabaseKey) {
