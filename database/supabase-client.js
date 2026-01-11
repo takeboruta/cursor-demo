@@ -37,7 +37,17 @@ if (isRender) {
     }
     
     console.log(`    利用可能なSUPABASE関連の環境変数: ${Object.keys(process.env).filter(k => k.includes('SUPABASE')).join(', ') || 'なし'}`);
-    console.log(`  すべての環境変数キー（最初の20個）: ${Object.keys(process.env).slice(0, 20).join(', ')}`);
+    
+    // タイポの可能性を検出（SUPBASEで始まる環境変数）
+    const typoKeys = Object.keys(process.env).filter(k => k.includes('SUPBASE') && !k.includes('SUPABASE'));
+    if (typoKeys.length > 0) {
+        console.error(`    ⚠️ 警告: タイポの可能性がある環境変数が見つかりました: ${typoKeys.join(', ')}`);
+        console.error(`    正しいキー名は 'SUPABASE_URL' と 'SUPABASE_ANON_KEY' です（Aを含む）`);
+    }
+    
+    // すべての環境変数キーを表示（デバッグ用）
+    const allKeys = Object.keys(process.env).sort();
+    console.log(`  すべての環境変数キー（${allKeys.length}個）: ${allKeys.join(', ')}`);
 }
 
 if (!supabaseUrl || !supabaseKey) {
