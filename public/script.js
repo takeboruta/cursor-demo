@@ -842,8 +842,16 @@ function renderDateTaskList(dateStr) {
         deleteBtn.textContent = '削除';
         deleteBtn.addEventListener('click', async () => {
             if (confirm('このタスクを削除しますか？')) {
-                await removeTask(task.id);
-                renderDateTaskList(dateStr);
+                try {
+                    await apiCall(`/tasks/${task.id}`, 'DELETE');
+                    await loadTasks();
+                    renderCalendar();
+                    // モーダルを自動で閉じる
+                    closeDateTaskModalFunc();
+                } catch (error) {
+                    console.error('タスク削除エラー:', error);
+                    alert('タスクの削除に失敗しました');
+                }
             }
         });
         
